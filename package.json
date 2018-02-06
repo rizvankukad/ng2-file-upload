@@ -1,6 +1,6 @@
 {
   "name": "ng2-file-upload-rizwan",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Angular file upload directives",
   "scripts": {
     "lite-server": "lite-server -c demo/bs-config.json",
@@ -16,7 +16,6 @@
     "build": "ngm build -p src --clean",
     "build.watch": "ngm build -p src --watch --skip-bundles",
     "start": "ng serve --aot",
-    "test": "ng test -sr",
     "test-coverage": "ng test -sr -cc",
     "version": "npm run flow.changelog && git add -A"
   },
