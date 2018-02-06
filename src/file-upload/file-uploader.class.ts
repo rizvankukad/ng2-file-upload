@@ -412,7 +412,6 @@ export class FileUploader {
       );
     } else {
 
-      xhr.setRequestHeader('Content-Type', `${item.file.type}`);
       xhr.setRequestHeader('Content-Range', `bytes ${start}-${end}/${SIZE}`);
       xhr.setRequestHeader('Content-Disposition', `attachment; filename="${item.file.name}"`);
 
