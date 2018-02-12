@@ -387,15 +387,15 @@ export class FileUploader {
     xhr.onloadend = () => {
       this.uploaders.pop();
       if(that.chunkedFinish) {
+        this.start = 0;
+        this.end = this.options.chunkSize;
+        that.chunkedFinish = false;
         let headers = this._parseHeaders(xhr.getAllResponseHeaders());
         let response = this._transformResponse(xhr.response, headers);
         let gist = this._isSuccessCode(xhr.status) ? 'Success' : 'Error';
         let method = '_on' + gist + 'Item';
         (this as any)[ method ](item, response, xhr.status, headers);
         this._onCompleteItem(item, response, xhr.status, headers);
-        this.start = 0;
-        this.end = this.options.chunkSize;
-        that.chunkedFinish = false;
       } else {
         this._xhrTransport_chunked(item);
       }
