@@ -68,15 +68,20 @@ export class FileUploader {
   };
 
   protected _failFilterIndex: number;
+  
+  protected start = 0;
+  protected end = this.options.chunkSize;
+  protected chunkedFinish = false;
 
   public constructor(options: FileUploaderOptions) {
     this.setOptions(options);
     this.response = new EventEmitter<any>();
   }
-
+  
   public setOptions(options: FileUploaderOptions): void {
     this.options = Object.assign(this.options, options);
 
+    this.end = this.options.chunkSize;
     this.authToken = this.options.authToken;
     this.authTokenHeader = this.options.authTokenHeader || 'Authorization';
     this.autoUpload = this.options.autoUpload;
@@ -300,10 +305,6 @@ export class FileUploader {
       return parsedHeaders;
     };
   }
-
-  protected start = 0;
-  protected end = this.options.chunkSize;
-  protected chunkedFinish = false;
 
   protected _xhrTransport_chunked(item: FileItem): any {
 
