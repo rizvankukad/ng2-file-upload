@@ -68,15 +68,20 @@ export class FileUploader {
   };
 
   protected _failFilterIndex: number;
+  
+  protected start = 0;
+  protected end = this.options.chunkSize;
+  protected chunkedFinish = false;
 
   public constructor(options: FileUploaderOptions) {
     this.setOptions(options);
     this.response = new EventEmitter<any>();
   }
-
+  
   public setOptions(options: FileUploaderOptions): void {
     this.options = Object.assign(this.options, options);
 
+    this.end = this.options.chunkSize;
     this.authToken = this.options.authToken;
     this.authTokenHeader = this.options.authTokenHeader || 'Authorization';
     this.autoUpload = this.options.autoUpload;
@@ -304,13 +309,25 @@ export class FileUploader {
   protected _xhrTransport_chunked(item: FileItem): any {
 
     this._onBeforeUploadItem(item);
-
     var blob = item._file;
 
-    var start = 0,
-        end = this.options.chunkSize;
-	
-	  this.chunkUploadXhr(blob.slice(start, end), item, start, end, blob.size);
+    var NUM_CHUNKS;
+
+    var SIZE = blob.size;
+
+    NUM_CHUNKS = Math.max(Math.ceil(SIZE / this.options.chunkSize), 1);
+    //start = 0;
+    //end = this.options.chunkSize;
+
+    if(this.start < SIZE) {
+      if(this.end >= SIZE) {
+        this.end = SIZE;
+        this.chunkedFinish = true;
+      }
+      this.chunkUploadXhr(blob.slice(this.start, this.end), item, this.start, this.end, SIZE);
+      this.start = this.end;
+      this.end = this.start + this.options.chunkSize;
+    }
   }
 
   protected chunkUploadXhr(blob: any, item: any, start: any, end: any, SIZE: any) {
@@ -369,21 +386,19 @@ export class FileUploader {
       this._onCompleteItem(item, response, xhr.status, headers);
     };
     xhr.onloadend = () => {
-      start = end;
-      end = start + this.options.chunkSize;
-
-      if(start < SIZE) {
-        if(end >= SIZE) {
-        end = SIZE;
-        }
-        this.chunkUploadXhr(blob.slice(start, end), item, start, end, SIZE);
-      } else {
+      this.uploaders.pop();
+      if(that.chunkedFinish) {
+        this.start = 0;
+        this.end = this.options.chunkSize;
+        that.chunkedFinish = false;
         let headers = this._parseHeaders(xhr.getAllResponseHeaders());
         let response = this._transformResponse(xhr.response, headers);
         let gist = this._isSuccessCode(xhr.status) ? 'Success' : 'Error';
         let method = '_on' + gist + 'Item';
         (this as any)[ method ](item, response, xhr.status, headers);
         this._onCompleteItem(item, response, xhr.status, headers);
+      } else {
+        this._xhrTransport_chunked(item);
       }
     };
     xhr.open(item.method, item.url, true);
@@ -413,11 +428,11 @@ export class FileUploader {
     } else {
 
       xhr.setRequestHeader('Content-Range', `bytes ${start}-${end}/${SIZE}`);
-
+      xhr.setRequestHeader('Content-Disposition', `attachment; filename="${item.file.name}"`);
+      this.uploaders.push(xhr);
       xhr.send(sendable);
     }
-    
-	  this._render();
+    this._render();
   }
 
   protected _xhrTransport(item: FileItem): any {
